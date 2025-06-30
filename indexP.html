@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <script src="https://unpkg.com/aframe-look-at-component@0.8.0/dist/aframe-look-at-component.min.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
+    <script>
+      AFRAME.registerComponent('disable-mouse-controls', {
+        init: function () {
+          this.el.setAttribute('look-controls', {pointerLockEnabled: false, touchEnabled: false, magicWindowTrackingEnabled: true});
+        }
+      });
+      
+      // VRボタンが表示されるたびに非表示にする機能
+      AFRAME.registerComponent('disable-vr-button', {
+        init: function () {
+          // VRボタンを監視して非表示にする
+          var vrButtonObserver = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+              var vrButton = document.querySelector('.a-enter-vr-button');
+              if (vrButton) {
+                vrButton.style.display = 'none';
+              }
+            });
+          });
+          
+          // ボディを監視してVRボタンの変化を監視する
+          vrButtonObserver.observe(document.body, { childList: true, subtree: true });
+        }
+      });
+
+      // 海っぽいフィルタ
+      AFRAME.registerComponent('blue-filter', {
+        init: function () {
+          var sceneEl = this.el.sceneEl;
+          var filter = document.createElement('a-entity');
+          filter.setAttribute('geometry', {
+            primitive: 'plane',
+            width: '100',
+            height: '100'
+          });
+          filter.setAttribute('material', {
+            color: '#FFB8E7', // コズミックラテ色
+            opacity: 0.05, // 半透明
+          });
+          filter.setAttribute('position', '0 0 -5'); // カメラの前に配置
+          this.el.appendChild(filter);
+        }
+      });
+      
+      // 画像のパスを一定時間ごとに取得する。
+      AFRAME.registerComponent('update-image-src', {
+        schema: {
+          index: {type: 'int', default: 1}
+        },
+
+        init: function () {
+          var el = this.el;
+          var basePath = './myimages/star_';
+          var defaultImage = 'https://itozemi.jp/AR/resource/objects/fish_0001.png';
+          var index = this.data.index; // 各a-image要素に対して個別のインデックスを使用
+
+          function updateImageSrc() {
+            // 画像のパスを生成
+            var paddedIndex = ('0000' + index).slice(-4);
+            var imagePath = basePath + paddedIndex + '.png';
+
+            // 画像の存在を確認
+            var img = new Image();
+            img.onload = function () {
+              // 画像が存在する場合
+              el.setAttribute('src', imagePath + '?' + new Date().getTime()); // キャッシュを無視するためにタイムスタンプを追加
+              el.setAttribute('material', 'transparent: true; alphaTest: 0.5'); // 透過設定を追加
+            };
+            img.onerror = function () {
+              // 画像が存在しない場合
+              el.setAttribute('src', defaultImage + '?' + new Date().getTime()); // キャッシュを無視するためにタイムスタンプを追加
+              el.setAttribute('material', 'transparent: true; alphaTest: 0.5'); // 透過設定を追加
+            };
+
+            // 画像の読み込みを開始
+            img.src = imagePath;
+          }
+
+          // 初回の画像更新
+          updateImageSrc();
+
+          // 〇秒ごとに画像のパスを更新
+          setInterval(updateImageSrc, 60000);
+        }
+      });
+
+
+    </script>
+</head>
+
+<body style="margin: 0; overflow: hidden;">
+  <a-scene vr-mode-ui="enabled: false" embedded arjs='sourceType: webcam; debugUIEnabled: false;' disable-vr-button>
+        <!-- 音声追加 -->
+        <a-assets>
+               <audio id="asteroid-sound" src="./sounds/mixkit-meteor-whoosh-3024.wav"></audio>
+        </a-assets>
+        <!-- 背景画像 -->
+        <a-sky src="./images/space_1.jpg"
+               material="shader: flat; transparent: true; opacity: 0.7">
+        </a-sky>
+        <!-- カメラ設定 -->
+        <a-camera blue-filter disable-mouse-controls position="0 0 0"></a-camera>
+
+        <a-entity>
+          <!-- 画像を表示、アニメーションの設定 --><!--ストライプ魚 -->
+          <a-image update-image-src="index: 1" position="0 -1 -2" scale="0.5 0.5 0.5" look-at="[camera]" float-motion 
+                   animation__a01001="property: position; from: 0 0 -10; to: 0 0 10; dur: 6000; easing: linear; loop: false; startEvents: loaded, animationcomplete__a01008;"
+                   animation__a01002="property: position; from: -2 -1 -2; to: -2 -3 0; dur: 6000; easing: linear; loop: false; startEvents: animationcomplete__a01001;"
+                   animation__a01003="property: position; from: -2 -3 0; to: -2 -4 2; dur: 5000; easing: linear; loop: false; startEvents: animationcomplete__a01002;"
+                   animation__a01004="property: position; from: -2 -4 2; to: 0 -3 3; dur: 5000; easing: linear; loop: false; startEvents: animationcomplete__a01003;"
+                   animation__a01005="property: position; from: -2 -1 4; to: 0 -1 -4; dur: 8000; easing: linear; loop: false; startEvents: animationcomplete__a01004;"
+                   animation__a01006="property: position; from: 2 -1 2; to: 2 -3 0; dur: 8000; easing: linear; loop: false; startEvents: animationcomplete__a01005;"
+                   animation__a01007="property: position; from: 2 -3 0; to: 3 -2.5 -2; dur: 6000; easing: linear; loop: false; startEvents: animationcomplete__a01006;"
+                   animation__a01008="property: position; from: 3 -2.5 -2; to: 0 -1 -2; dur: 6000; easing: linear; loop: false; startEvents: animationcomplete__a01007;"
+                   />
+          <a-sound src="#asteroid-sound" autoplay="true" loop="true" volume="0.01" positional="true" distanceModel="linear" refDistance="0" maxDistance="10"></a-sound>
+        </a-entity>
+  
+        <a-entity>
+          <!-- 画像を表示、アニメーションの設定 --><!--青トビウオ -->
+          <a-image update-image-src="index: 2" position="0 -3 -2" scale="0.5 0.5 0.5" look-at="[camera]" float-motion 
+                   animation__a02001="property: position; from: 0 -3 -2; to: 2.5 1 -2.5; dur: 6000; easing: linear; loop: false; startEvents: loaded, animationcomplete__a02008;"
+                   animation__a02002="property: position; from: 0 -1 -4; to: -1 3 4; dur: 8000; easing: linear; loop: false; startEvents: animationcomplete__a02001;"
+                   animation__a02003="property: position; from: 1 -3 0; to: 2.5 1 2.5; dur: 7000; easing: linear; loop: false; startEvents: animationcomplete__a02002;"
+                   animation__a02004="property: position; from: 2.5 1 2.5; to: 0 -3 2; dur: 6000; easing: linear; loop: false; startEvents: animationcomplete__a02003;"
+                   animation__a02005="property: position; from: 3 3 -4; to: -3 -2 4; dur: 5500; easing: linear; loop: false; startEvents: animationcomplete__a02004;"
+                   animation__a02006="property: position; from: -2.5 1 2.5; to: -1 -3 0; dur: 6000; easing: linear; loop: false; startEvents: animationcomplete__a02005;"
+                   animation__a02007="property: position; from: -1 -3 0; to: -2.5 1 -2.5; dur: 7500; easing: linear; loop: false; startEvents: animationcomplete__a02006;"
+                   animation__a02008="property: position; from: -2.5 1 -2.5; to: 0 -3 -2; dur: 6000; easing: linear; loop: false; startEvents: animationcomplete__a02007;"
+                   />
+          <a-sound src="#asteroid-sound" autoplay="true" loop="true" volume="0.01" positional="true" distanceModel="linear" refDistance="0" maxDistance="10"></a-sound>
+        </a-entity>
+      
+    <a-entity>
+      <!-- 画像を表示、アニメーションの設定 --> <!-- カラフルな魚 -->
+      <a-image update-image-src="index: 3" position="0 0 -3" scale="0.5 0.5 0.5" look-at="[camera]" float-motion update-image-src
+               animation__a03001="property: position; from: 0 0 -3; to: -2.5 2.5 -2.5; dur: 5000; easing: linear; loop: false; startEvents: loaded, animationcomplete__a03006;"
+               animation__a03002="property: position; from: -3 3 -4; to: 3 -2 4; dur: 8000; easing: linear; loop: false; startEvents: animationcomplete__a03001;"
+               animation__a03003="property: position; from: -2 0 0; to: -2.5 2.5 2.5; dur: 6000; easing: linear; loop: false; startEvents: animationcomplete__a03002;"
+               animation__a03004="property: position; from: -2.5 2.5 2.5; to: 3 -2 3; dur: 8000; easing: linear; loop: false; startEvents: animationcomplete__a03003;"
+               animation__a03005="property: position; from: 3 -2 3; to: 1 2.5 -2.5; dur: 7000; easing: linear; loop: false; startEvents: animationcomplete__a03004;"
+               animation__a03006="property: position; from: 1 2.5 -2.5; to: 0 0 -3; dur: 6000; easing: linear; loop: false; startEvents: animationcomplete__a03005;"
+               />
+      <a-sound src="#asteroid-sound" autoplay="true" loop="true" volume="0.01" positional="true" distanceModel="linear" refDistance="0" maxDistance="10"></a-sound>
+    </a-entity>
+
+    <a-entity>
+      <!-- 画像を表示、アニメーションの設定 --><!-- 黄色唇 -->
+      <a-image update-image-src="index: 4" position="0 2 -4" scale="0.5 0.5 0.5" look-at="[camera]" float-motion 
+               animation__a04001="property: position; from: 0 2 -4; to: -2 1 -2; dur: 6000; easing: linear; loop: false; startEvents: loaded, animationcomplete__a04008;"
+               animation__a04002="property: position; from: -2 1 -2; to: -4 0 0; dur: 6000; easing: linear; loop: false; startEvents: animationcomplete__a04001;"
+               animation__a04003="property: position; from: -2 -1 -4; to: 3 1 4; dur: 7000; easing: linear; loop: false; startEvents: animationcomplete__a04002;"
+               animation__a04004="property: position; from: -2 -1 2; to: 0 -2 4; dur: 8000; easing: linear; loop: false; startEvents: animationcomplete__a04003;"
+               animation__a04005="property: position; from: 0 -2 4; to: 2 -1 2; dur: 6000; easing: linear; loop: false; startEvents: animationcomplete__a04004;"
+               animation__a04006="property: position; from: 2 -1 2; to: 4 0 0; dur: 5500; easing: linear; loop: false; startEvents: animationcomplete__a04005;"
+               animation__a04007="property: position; from: 4 0 0; to: 2 1 -2; dur: 6000; easing: linear; loop: false; startEvents: animationcomplete__a04006;"
+               animation__a04008="property: position; from: 2 1 -2; to: 0 2 -4; dur: 5500; easing: linear; loop: false; startEvents: animationcomplete__a04007;"
+               />
+      <a-sound src="#asteroid-sound" autoplay="true" loop="true" volume="0.01" positional="true" distanceModel="linear" refDistance="0" maxDistance="10"></a-sound>
+    </a-entity>
+
+    <a-entity>
+      <!-- 画像を表示、アニメーションの設定 --><!--シャチ -->
+      <a-image update-image-src="index: 5" position="3 1.5 0" scale="0.5 0.5 0.5" look-at="[camera]" float-motion 
+               animation__a05001="property: position; from: 3 1.5 0; to: 2.5 -2 2.5; dur: 8000; easing: linear; loop: false; startEvents: loaded, animationcomplete__a05008;"
+               animation__a05002="property: position; from: 3 -3 4; to: 0 0 -4; dur: 7000; easing: linear; loop: false; startEvents: animationcomplete__a05001;"
+               animation__a05003="property: position; from: 0 1.5 3.5; to: -2.5 0.5 2; dur: 6000; easing: linear; loop: false; startEvents: animationcomplete__a05002;"
+               animation__a05004="property: position; from: -2.5 0.5 2; to: -3 2 0; dur: 6500; easing: linear; loop: false; startEvents: animationcomplete__a05003;"
+               animation__a05005="property: position; from: -3 2 0; to: -2.5 1 -1.5; dur: 7000; easing: linear; loop: false; startEvents: animationcomplete__a05004;"
+               animation__a05006="property: position; from: -2.5 1 -1.5; to: 0 2 -3; dur: 6500; easing: linear; loop: false; startEvents: animationcomplete__a05005;"
+               animation__a05007="property: position; from: 0 2 -3; to: 1.5 1 -1.5; dur: 6000; easing: linear; loop: false; startEvents: animationcomplete__a05006;"
+               animation__a05008="property: position; from: 1.5 1 -1.5; to: 3 1.5 0; dur: 6500; easing: linear; loop: false; startEvents: animationcomplete__a05007;"
+               />
+      <a-sound src="#asteroid-sound" autoplay="true" loop="true" volume="0.01" positional="true" distanceModel="linear" refDistance="0" maxDistance="10"></a-sound>
+    </a-entity>
+  
+    <a-entity>
+      <!-- 画像を表示、アニメーションの設定 --> <!-- バスピス -->
+      <a-image update-image-src="index: 6" position="0 1 -3" scale="0.5 0.5 0.5" look-at="[camera]" float-motion 
+               animation__a06001="property: position; from: 0 1 -3; to: -1.25 0.5 -2.75; dur: 5000; easing: linear; loop: false; startEvents: loaded, animationcomplete__a06012;"
+               animation__a06002="property: position; from: -1.25 0.5 -2.75; to: -2.5 -2 -2.5; dur: 7000; easing: linear; loop: false; startEvents: animationcomplete__a06001;"
+               animation__a06003="property: position; from: 0 0 -4; to: 1 0 4; dur: 6000; easing: linear; loop: false; startEvents: animationcomplete__a06002;"
+               animation__a06004="property: position; from: -2.75 0.5 -1.25; to: -3 1 0; dur: 6000; easing: linear; loop: false; startEvents: animationcomplete__a06003;"
+               animation__a06005="property: position; from: -3 1 0; to: -0.5 1.5 1.5; dur: 7000; easing: linear; loop: false; startEvents: animationcomplete__a06004;"
+               animation__a06006="property: position; from: -0.5 1.5 1.5; to: 2 2 3; dur: 6000; easing: linear; loop: false; startEvents: animationcomplete__a06005;"
+               animation__a06007="property: position; from: 2 2 3; to: 2.5 1.5 1.5; dur: 6000; easing: linear; loop: false; startEvents: animationcomplete__a06006;"
+               animation__a06008="property: position; from: 2.5 1.5 1.5; to: 3 1 0; dur: 6000; easing: linear; loop: false; startEvents: animationcomplete__a06007;"
+               animation__a06009="property: position; from: 3 1 0; to: 3 1.5 -2.5; dur: 6000; easing: linear; loop: false; startEvents: animationcomplete__a06008;"
+               animation__a06010="property: position; from: 3 1.5 -2.5; to: 3 2 -3; dur: 6000; easing: linear; loop: false; startEvents: animationcomplete__a06009;"
+               animation__a06011="property: position; from: 3 2 -3; to: 1.5 1.5 -3; dur: 7000; easing: linear; loop: false; startEvents: animationcomplete__a06010;"
+               animation__a06012="property: position; from: 1.5 1.5 -3; to: 0 1 -3; dur: 5000; easing: linear; loop: false; startEvents: animationcomplete__a06011;"
+               />
+      <a-sound src="#asteroid-sound" autoplay="true" loop="true" volume="0.01" positional="true" distanceModel="linear" refDistance="0" maxDistance="10"></a-sound>
+    </a-entity>
+
+    <a-entity>
+      <!-- 画像を表示、アニメーションの設定 --> <!--ミニドリー -->
+      <a-image update-image-src="index: 7" position="3 3 0" scale="0.5 0.5 0.5" look-at="[camera]" float-motion 
+               animation__a07001="property: position; from: 3 3 0; to: 1.5 1.5 -2; dur: 5000; easing: linear; loop: false; startEvents: loaded, animationcomplete__a07007;"
+               animation__a07002="property: position; from: 1.5 1.5 -2; to: -1.5 0 -4; dur: 7000; easing: linear; loop: false; startEvents: animationcomplete__a07001;"
+               animation__a07003="property: position; from: -1.5 0 -4; to: -3 1.5 -3; dur: 6000; easing: linear; loop: false; startEvents: animationcomplete__a07002;"
+               animation__a07004="property: position; from: -3 1.5 -3; to: -2.5 2 0; dur: 6000; easing: linear; loop: false; startEvents: animationcomplete__a07003;"
+               animation__a07005="property: position; from: -2.5 2 0; to: -3 -2 3; dur: 8000; easing: linear; loop: false; startEvents: animationcomplete__a07004;"
+               animation__a07006="property: position; from: -3 -2 3; to: 0 2 1; dur: 6000; easing: linear; loop: false; startEvents: animationcomplete__a07005;"
+               animation__a07007="property: position; from: 0 2 1; to: 3 3 0; dur: 8000; easing: linear; loop: false; startEvents: animationcomplete__a07006;"
+               />
+      <a-sound src="#asteroid-sound" autoplay="true" loop="true" volume="0.01" positional="true" distanceModel="linear" refDistance="0" maxDistance="10"></a-sound>
+    </a-entity>
+
+    <a-entity>
+      <!-- 画像を表示、アニメーションの設定 --><!--黄色ハリセンボン -->
+      <a-image update-image-src="index: 8" position="-1.3 1 -1" scale="0.5 0.5 0.5" look-at="[camera]" float-motion 
+               animation__a08001="property: position; from: -1.3 1 -1; to: 0 1.5 -0.5; dur: 6500; easing: linear; loop: false; startEvents: loaded, animationcomplete__a08008;"
+               animation__a08002="property: position; from: 0 1.5 -0.5; to: 1 1 -1.7; dur: 6000; easing: linear; loop: false; startEvents: animationcomplete__a08001;"
+               animation__a08003="property: position; from: 1 1 -1.7; to: 2 0.5 0; dur: 7000; easing: linear; loop: false; startEvents: animationcomplete__a08002;"
+               animation__a08004="property: position; from: 2 0.5 0; to: 1 1 1; dur: 7500; easing: linear; loop: false; startEvents: animationcomplete__a08003;"
+               animation__a08005="property: position; from: 1 1 1; to: 0 0.5 2; dur: 7000; easing: linear; loop: false; startEvents: animationcomplete__a08004;"
+               animation__a08006="property: position; from: 0 0.5 2; to: -1.5 1 0.5; dur: 6500; easing: linear; loop: false; startEvents: animationcomplete__a08005;"
+               animation__a08007="property: position; from: -1.5 1 0.5; to: -2 -1.5 0; dur: 8000; easing: linear; loop: false; startEvents: animationcomplete__a08006;"
+               animation__a08008="property: position; from: -2 -1.5 0; to: -1.3 1 -1; dur: 7000; easing: linear; loop: false; startEvents: animationcomplete__a08007;"
+               />
+      <a-sound src="#asteroid-sound" autoplay="true" loop="true" volume="0.01" positional="true" distanceModel="linear" refDistance="0" maxDistance="10"></a-sound>
+    </a-entity>
+  
+    <a-entity>
+      <!-- 画像を表示、アニメーションの設定 --> <!-- 青マンボウ -->
+      <a-image update-image-src="index: 9" position="0 -2 -3" scale="0.5 0.5 0.5" look-at="[camera]" float-motion 
+               animation__a09001="property: position; from: 0 -2 -3; to: -3 0 -3; dur: 5000; easing: linear; loop: false; startEvents: loaded, animationcomplete__a09010;"
+               animation__a09002="property: position; from: -3 0 -3; to: -3 3 -2; dur: 7000; easing: linear; loop: false; startEvents: animationcomplete__a09001;"
+               animation__a09003="property: position; from: -3 3 -2; to: -3 -1 2; dur: 6000; easing: linear; loop: false; startEvents: animationcomplete__a09002;"
+               animation__a09004="property: position; from: -3 -1 2; to: -3 -1 3; dur: 6000; easing: linear; loop: false; startEvents: animationcomplete__a09003;"
+               animation__a09005="property: position; from: -3 -1 3; to: -1 -3 3; dur: 8000; easing: linear; loop: false; startEvents: animationcomplete__a09004;"
+               animation__a09006="property: position; from: -1 -3 3; to: 2 2 3; dur: 6000; easing: linear; loop: false; startEvents: animationcomplete__a09005;"
+               animation__a09007="property: position; from: 2 2 3; to: 3 -1 1; dur: 6000; easing: linear; loop: false; startEvents: animationcomplete__a09006;"
+               animation__a09008="property: position; from: 3 -1 1; to: 2 2 -3; dur: 6000; easing: linear; loop: false; startEvents: animationcomplete__a09007;"
+               animation__a09009="property: position; from: 2 2 -3; to: 1 0 -1; dur: 6000; easing: linear; loop: false; startEvents: animationcomplete__a09008;"
+               animation__a09010="property: position; from: 1 0 -1; to: 0 -2 -3; dur: 6000; easing: linear; loop: false; startEvents: animationcomplete__a09009;"
+               />
+      <a-sound src="#asteroid-sound" autoplay="true" loop="true" volume="0.01" positional="true" distanceModel="linear" refDistance="0" maxDistance="10"></a-sound>
+    </a-entity>
+
+  <a-entity>
+    <!-- 画像を表示、アニメーションの設定 --> <!--水色ノーマル -->
+    <a-image update-image-src="index: 10" position="3 1 -2" scale="0.5 0.5 0.5" look-at="[camera]" float-motion 
+             animation__a10001="property: position; from: 3 1 -2; to: 1.5 0 -2; dur: 6000; easing: linear; loop: false; startEvents: loaded, animationcomplete__a10013;"
+             animation__a10002="property: position; from: 1.5 0 -2; to: -1.5 1 -2; dur: 7000; easing: linear; loop: false; startEvents: animationcomplete__a10001;"
+             animation__a10003="property: position; from: -1.5 1 -2; to: -4 0 -2; dur: 6000; easing: linear; loop: false; startEvents: animationcomplete__a10002;"
+             animation__a10004="property: position; from: -4 0 -2; to: -4 2 2; dur: 4000; easing: linear; loop: false; startEvents: animationcomplete__a10003;"
+             animation__a10005="property: position; from: -4 2 2; to: -2.5 1 3; dur: 6000; easing: linear; loop: false; startEvents: animationcomplete__a10004;"
+             animation__a10006="property: position; from: -2.5 1 3; to: -1.5 0 3; dur: 7000; easing: linear; loop: false; startEvents: animationcomplete__a10005;"
+             animation__a10007="property: position; from: -1.5 0 3; to: 0 -2 3; dur: 7000; easing: linear; loop: false; startEvents: animationcomplete__a10006;"
+             animation__a10008="property: position; from: 0 -2 3; to: 1 0 3; dur: 5500; easing: linear; loop: false; startEvents: animationcomplete__a10007;"
+             animation__a10009="property: position; from: 1 0 3; to: 2 1 3; dur: 5500; easing: linear; loop: false; startEvents: animationcomplete__a10008;"
+             animation__a10010="property: position; from: 2 1 3; to: 2 0 2; dur: 5500; easing: linear; loop: false; startEvents: animationcomplete__a10009;"
+             animation__a10011="property: position; from: 2 0 2; to: 2 1 1.5; dur: 5500; easing: linear; loop: false; startEvents: animationcomplete__a10010;"
+             animation__a10012="property: position; from: 2 1 1.5; to: 2 0 0; dur: 5500; easing: linear; loop: false; startEvents: animationcomplete__a10011;"
+             animation__a10013="property: position; from: 2 0 0; to: 3 1 -2; dur: 6000; easing: linear; loop: false; startEvents: animationcomplete__a10012;"
+             />
+    <a-sound src="#asteroid-sound" autoplay="true" loop="true" volume="0.01" positional="true" distanceModel="linear" refDistance="0" maxDistance="10"></a-sound>
+  </a-entity>
+
+  <a-entity>
+    <!-- 画像を表示、アニメーションの設定 --><!--黄色黒熱帯魚 -->
+    <a-image update-image-src="index: 11" position="0 0.5 -1.5" scale="0.5 0.5 0.5" look-at="[camera]" float-motion 
+             animation__a11001="property: position; from: 0 0.5 -1.5; to: 1.5 1 -0.3; dur: 6500; easing: linear; loop: false; startEvents: loaded, animationcomplete__a11007;"
+             animation__a11002="property: position; from: 1.5 1 -0.3; to: 1.2 -0.5 1.3; dur: 7000; easing: linear; loop: false; startEvents: animationcomplete__a11001;"
+             animation__a11003="property: position; from: 1.2 -0.5 1.3; to: 0 0.7 2; dur: 6000; easing: linear; loop: false; startEvents: animationcomplete__a11002;"
+             animation__a11004="property: position; from: 0 0.7 2; to: -2 -1.5 1.5; dur: 8000; easing: linear; loop: false; startEvents: animationcomplete__a11003;"
+             animation__a11005="property: position; from: -2 -1.5 1.5; to: -1.3 0.5 -0.5; dur: 7500; easing: linear; loop: false; startEvents: animationcomplete__a11004;"
+             animation__a11006="property: position; from: -1.3 0.5 -0.5; to: -1.2 -1 -2; dur: 6500; easing: linear; loop: false; startEvents: animationcomplete__a11005;"
+             animation__a11007="property: position; from: -1.2 -1 -2; to: 0 0.5 -1.5; dur: 6000; easing: linear; loop: false; startEvents: animationcomplete__a11006;"
+            />
+    <a-sound src="#asteroid-sound" autoplay="true" loop="true" volume="0.01" positional="true" distanceModel="linear" refDistance="0" maxDistance="10"></a-sound>
+  </a-entity>
+
+  
+     <!-- 泡のエンティティ -->
+     
+     <!-- 泡を生成するスクリプト -->
+     <script>
+     
+       AFRAME.registerComponent('float-motion', {  //浮遊感を出すスクリプト
+          tick: function (time, timeDelta) {
+            var el = this.el;
+            var t = time / 1000;
+            el.object3D.position.y += 0.002 * Math.sin(t);
+            el.object3D.position.x += 0.001 * Math.cos(t / 2);
+          }
+        });
+
+
+     </script>
+
+  </a-scene>
+</body>
+</html>
